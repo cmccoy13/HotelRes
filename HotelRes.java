@@ -84,10 +84,35 @@ public class HotelRes {
 	
 	private static void startBooking() {
 		System.out.println("Starts the flow for a user to book a room");
+		
+		/* The system shall allow booking until the hotel is fully booked.
+		 * The system must not allow overbooking.
+		 * Each room shall have information about its maximum number of occupants allowed.
+		 * The system shall not allow a room to be occupied by guests beyond its capacity.
+		 * The system shall allow payment by credit card. Create fake credit card accounts
+				in your database. A room shall be reserved only when payment by a credit card
+				is approved (do not book a room without payment. Also, do not charge the card
+				unless the room can be reserved. I.e. both reservation and the charge must be
+				bundled into a transaction.The same should be true for cancellation.).
+		 * The system shall allow users to search for availabilities of rooms specifying day
+				(checkout and checkin dates), the type of room (single, double, twin, etc), the
+				decor, the price range, the number of rooms, and the number of occupants.
+		 * The system shall display availability of rooms on each day. For each room,
+				display its popularity score (number of days the room has been occupied during
+				the previous 180 days divided by 180 (round to two decimal places)), price,
+				available or if not, next available date, length, bed type, the number of beds, the
+				maximum number of occupancy allowed.
+		 * Upon reservation, the system shall display the details of the reservation on the screen.
+		 */
 	}
 	
 	private static void startCancelRes() {
 		System.out.println("Starts the flow for a user to cancel their reservation");
+		
+		/* Upon the cancellation or change of a reservation, the system shall display the
+				details of the cancelled or changed reservation on the screen.
+		 * 
+		 */
 	}
 
 	private static void startChangeRes() {
