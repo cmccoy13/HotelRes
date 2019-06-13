@@ -109,6 +109,8 @@ public class HotelRes {
 	 */
 	private static void startBooking() {
 		int c = 0;
+		int rChoice = 0;
+		String tempString = "";
 		String sChoice = "";
 		ResultSet available = null;
 		ArrayList<String> codes = new ArrayList<String>();
@@ -149,12 +151,27 @@ public class HotelRes {
 				return;
 			}
 			
+			System.out.println("\nPlease choose which room you would like to reserve:");
 			while(available.next()) {
 				c++;
-				System.out.println(c+") Room: "+available.getString("RoomName")+", Beds: "+available.getInt("Beds")+", Bed Type: "+available.getString("bedType")+
-						", Max Occupants: "+available.getInt("maxOcc")+", Base Price: "+available.getFloat("basePrice")+", Decor: "+available.getString("decor"));
+				System.out.println(c+") Room: "+available.getString("RoomName")+", Max Occupants: "+available.getInt("maxOcc"));
 				codes.add(available.getString("RoomCode"));
 			}
+			
+			while(rChoice == 0) {
+				tempString = sc.nextLine();
+				try {
+					rChoice = Integer.parseInt(tempString.substring(0, 1));
+					if(rChoice > codes.size() || rChoice < 1) {
+						rChoice = 0;
+						System.out.println("Please input a listed number:");
+					}
+				} catch(NumberFormatException e) {
+					rChoice = 0;
+					System.out.println("Please input a number");
+				}
+			}
+			rChoice--;
 		} catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
