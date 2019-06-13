@@ -196,6 +196,62 @@ public class HotelRes {
 
 			if(rs.next()) {
 				System.out.println("\nWelcome manager");
+				System.out.println("\nRevenue for the year, by month\n");
+				System.out.println("                           January    February      March       April        May       June        July        August     September    October    November    December          Total");
+				
+				for(int i = 1; i <= 10; i++) {
+					String room = "ERROR";
+					
+					if(i == 1) {
+						room = "'Abscond or bolster'";
+					}
+					else if (i == 2) {
+						room = "'Convoke and sanguine'";
+					}
+					else if (i == 3) {
+						room = "'Frugal not apropos'";
+					}
+					else if (i == 4) {
+						room = "'Harbinger but bequest'";
+					}
+					else if (i == 5) {
+						room = "'Immutable before decorum'";
+					}
+					else if (i == 6) {
+						room = "'Interim but salutary'";
+					}
+					else if (i == 7) {
+						room = "'Mendicant with cryptic'";
+					}
+					else if (i == 8) {
+						room = "'Recluse and defiance'";
+					}
+					else if (i == 9) {
+						room = "'Riddle to exculpate'";
+					}
+					else if (i == 10) {
+						room = "'Thrift and accolade'";
+					}
+					
+					PreparedStatement stmt = conn.prepareStatement("SELECT month(checkin), sum(rate*(DATEDIFF(checkout, checkin))) Rev FROM Reservations rs JOIN Rooms rm ON rs.Room = rm.RoomCode where RoomName = ? GROUP BY month(checkin) ORDER BY MONTH(checkin)");
+					stmt.setString(1, room);
+					ResultSet roomQ = stmt.executeQuery();
+					
+					System.out.print(room + ":     ");
+					while(roomQ.next()) {
+						System.out.print(roomQ.getString("Rev") + "     ");
+					}
+					
+					PreparedStatement total = conn.prepareStatement("SELECT sum(rate*(DATEDIFF(checkout, checkin))) Rev FROM Reservations rs JOIN Rooms rm ON rs.Room = rm.RoomCode where RoomName = ?");
+					total.setString(1,  room);
+					ResultSet totalQ = total.executeQuery();
+					totalQ.next();
+					System.out.print("    " + totalQ.getString("Rev"));
+					
+					
+					System.out.print("\n");
+				}				
+						
 			}
 			else {
 				System.out.println("\nInvalid manager ID");
