@@ -162,6 +162,25 @@ public class HotelRes {
 
 	private static void startResHistory() {
 		System.out.println("Starts the flow for a user to view their reservation history");
+		System.out.println("What is your last name?");
+		String lname = sc.nextLine().toUpperCase();
+		System.out.println("What is your first name?");
+		String fname = sc.nextLine().toUpperCase();
+		try {
+			PreparedStatement stmt = conn.prepareStatement("SELECT r.Room,r.CheckIn,r.CheckOut FROM Reservations r "
+					+ " WHERE r.FirstName = ? AND r.LastName = ?");
+			stmt.setString(1, "'" + fname + "'");
+			stmt.setString(2, "'" + lname + "'");
+			ResultSet resultSet = stmt.executeQuery();
+
+			while (resultSet.next()) {
+				System.out.println("ROOM: " + resultSet.getString("Room"));
+				System.out.println("CHECK-IN: " + resultSet.getString("CheckIn"));
+				System.out.println("CHECK-OUT: " + resultSet.getString("CheckOut"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private static void startManager() {
