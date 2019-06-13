@@ -120,7 +120,7 @@ public class HotelRes {
 				+ "3: Search by number of beds\n"
 				+ "4: Search by decor\n"
 				+ "5: Search by price range\n"
-				+ "6: Search by maximum occupants\n");
+				+ "6: Search by maximum occupants");
 		sChoice = sc.nextLine();
 		
 		if(sChoice.equals("1"))
@@ -139,10 +139,9 @@ public class HotelRes {
 			System.out.println("Incorret input, try again.");
 			return;
 		}
-
-		/*if(available = null) {
+		
+		if(available==null)
 			return;
-		}*/
 		
 		try {
 			if(!available.isBeforeFirst()) {
@@ -206,27 +205,27 @@ public class HotelRes {
 	private static ResultSet typeSearch() {
 		String tChoice = "";
 		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r ";
+		PreparedStatement getRooms = null;
 		ResultSet available = null;
 		
 		System.out.println("Please select the type of bed you prefer: \n\n"
 				+ "1: King\n"
 				+ "2: Queen\n"
-				+ "3: Double\n");
+				+ "3: Double");
 		tChoice = sc.nextLine();
 		
-		if(tChoice.equals("1")) {
-			baseQuery = baseQuery + "where bedType = \"'King'\"";
-		} else if(tChoice.equals("2")) {
-			baseQuery = baseQuery + "where bedType = \"'Queen'\"";
-		} else if(tChoice.equals("3")) {
-			baseQuery = baseQuery + "where bedType = \"'Double'\"";
-		} else {
-			System.out.println("Incorrect input, try again.");
-			return available;
-		}
-		
 		try {
-			PreparedStatement getRooms = conn.prepareStatement(baseQuery);
+			if(tChoice.equals("1")) {
+				getRooms = conn.prepareStatement(baseQuery+"where bedType = \"'King'\"");
+			} else if(tChoice.equals("2")) {
+				getRooms = conn.prepareStatement(baseQuery+"where bedType = \"'Queen'\"");
+			} else if(tChoice.equals("3")) {
+				getRooms = conn.prepareStatement(baseQuery+"where bedType = \"'Double'\"");
+			} else {
+				System.out.println("Incorrect input, try again.");
+				return available;
+			}
+			
 			available = getRooms.executeQuery();
 		} catch(SQLException e) {
 			System.out.println(e.getMessage());
@@ -236,25 +235,129 @@ public class HotelRes {
 	}
 	
 	private static ResultSet numberSeach() {
+		String nChoice = "";
+		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r ";
+		PreparedStatement getRooms = null;
 		ResultSet available = null;
 		
-		return available;
-	}
-	
-	private static ResultSet rangeSearch() {
-		ResultSet available = null;
+		System.out.println("Please select the number of beds you prefer:\n\n"
+				+ "1: One bed\n"
+				+ "2: Two beds");
+		nChoice = sc.nextLine();
+		
+		try {
+			if(nChoice.equals("1")) {
+				getRooms = conn.prepareStatement(baseQuery+"where Beds = 1");
+			} else if(nChoice.equals("2")) {
+				getRooms = conn.prepareStatement(baseQuery+"where Beds = 2");
+			} else {
+				System.out.println("Incorrect input, try again.");
+				return available;
+			}
+			
+			available = getRooms.executeQuery(); 
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 		
 		return available;
 	}
 	
 	private static ResultSet decorSearch() {
+		String dChoice = "";
+		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r ";
+		PreparedStatement getRooms = null;
 		ResultSet available = null;
+		
+		System.out.println("Please select the type of decor you prefer:\n\n"
+				+ "1: Traditional\n"
+				+ "2: Modern\n"
+				+ "3: Rustic");
+		dChoice = sc.nextLine();
+		
+		try {
+			if (dChoice.equals("1")) {
+				getRooms = conn.prepareStatement(baseQuery+"where decor = \"'traditional'\"");
+			} else if (dChoice.equals("2")) {
+				getRooms = conn.prepareStatement(baseQuery+"where decor = \"'modern'\"");
+			} else if (dChoice.equals("3")) {
+				getRooms = conn.prepareStatement(baseQuery+"where decor = \"'rustic'\"");
+			} else {
+				System.out.println("Incorrect input, try again.");
+				return available;
+			}
+			
+			available = getRooms.executeQuery();
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return available;
+	}
+	
+	private static ResultSet rangeSearch() {
+		String rChoice = "";
+		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r ";
+		PreparedStatement getRooms = null;
+		ResultSet available = null;
+		
+		System.out.println("Please select your price ceiling:\n\n"
+				+ "1: $75\n"
+				+ "2: $125\n"
+				+ "3: $150\n"
+				+ "4: $175\n"
+				+ "5: $250");
+		rChoice = sc.nextLine();
+		
+		try {
+			if (rChoice.equals("1")) {
+				getRooms = conn.prepareStatement(baseQuery+"where basePrice <= 75");
+			} else if (rChoice.equals("2")) {
+				getRooms = conn.prepareStatement(baseQuery+"where basePrice <= 125");
+			} else if (rChoice.equals("3")) {
+				getRooms = conn.prepareStatement(baseQuery+"where basePrice <= 150");
+			} else if (rChoice.equals("4")) {
+				getRooms = conn.prepareStatement(baseQuery+"where basePrice <= 175");
+			} else if (rChoice.equals("5")) {
+				getRooms = conn.prepareStatement(baseQuery+"where basePrice <= 250");
+			} else {
+				System.out.println("Incorrect input, try again.");
+				return available;
+			}
+			
+			available = getRooms.executeQuery();
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 		
 		return available;
 	}
 	
 	private static ResultSet maxSearch() {
+		String mChoice = "";
+		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r ";
+		PreparedStatement getRooms = null;
 		ResultSet available = null;
+		
+		System.out.println("Please select size room you need:\n\n"
+				+ "1: Two Occupants\n"
+				+ "2: Four Occupants");
+		mChoice = sc.nextLine();
+		
+		try {
+			if(mChoice.equals("1")) {
+				getRooms = conn.prepareStatement(baseQuery+"where maxOcc = 2");
+			} else if(mChoice.equals("2")) {
+				getRooms = conn.prepareStatement(baseQuery+"where Beds = 4");
+			} else {
+				System.out.println("Incorrect input, try again.");
+				return available;
+			}
+			
+			available = getRooms.executeQuery(); 
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 		
 		return available;
 	}
@@ -410,10 +513,6 @@ public class HotelRes {
 		catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
-	}
-	
-	private static void quit() {
-		System.out.println("Quitting");
 	}
 	
 	private static void test() {
