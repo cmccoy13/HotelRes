@@ -165,7 +165,26 @@ public class HotelRes {
 	}
 
 	private static void startManager() {
-		System.out.println("Allows a manager to sign in to view revenue of year");
+		System.out.println("\nEnter user ID number: ");
+		int id = sc.nextInt();
+		sc.nextLine();
+		
+		try { //get all reservations from that CC			
+			
+			PreparedStatement prepState = conn.prepareStatement("SELECT * FROM Customers WHERE id = ? AND Manager = 1");
+			prepState.setInt(1, id);
+			ResultSet rs = prepState.executeQuery();
+
+			if(rs.next()) {
+				System.out.println("\nWelcome manager");
+			}
+			else {
+				System.out.println("\nInvalid manager ID");
+			}
+		}
+		catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 	
 	private static void quit() {
