@@ -36,19 +36,21 @@ public class HotelRes {
         try {
             Connection conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
             System.out.print("MySQL Connection created");
+            
+            String command = "";
+    		
+    		while(!command.equals("q")) {
+    			printWelcome();
+    			command = sc.nextLine();
+    			executeCommand(command);
+    		}
+    		
+    		conn.close();
         } 
         catch (SQLException e) {
             e.printStackTrace();
 
-        }
-        
-        String command = "";
-		
-		while(!command.equals("q")) {
-			printWelcome();
-			command = sc.nextLine();
-			executeCommand(command);
-		}		
+        }	
     }
     
     private static void printWelcome() {
