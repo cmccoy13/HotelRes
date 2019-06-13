@@ -698,7 +698,6 @@ public class HotelRes {
 	}
 
 	private static void startResHistory() {
-		System.out.println("Starts the flow for a user to view their reservation history");
 		System.out.println("What is your last name?");
 		String lname = sc.nextLine().toUpperCase();
 		System.out.println("What is your first name?");
