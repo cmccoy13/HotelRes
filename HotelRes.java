@@ -16,6 +16,7 @@ export APP_JDBC_PW=008506325
 public class HotelRes {
 	
 	static Scanner sc = new Scanner(System.in);
+	static Connection conn;
 	
     public static void main(String[] args) {
 
@@ -27,14 +28,14 @@ public class HotelRes {
             System.exit(-1);
         }
 
-        String jdbcUrl = "jdbc:mysql://csc365.toshikuboi.net/cmmccoy";
+        String jdbcUrl = "jdbc:mysql://csc365.toshikuboi.net/sec03group10";
         String dbUsername = "cmmccoy";
         String dbPassword = "008506325";
 
         System.out.println(jdbcUrl);
         
         try {
-            Connection conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
+            conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
             System.out.print("MySQL Connection created");
             
             String command = "";
@@ -77,7 +78,8 @@ public class HotelRes {
 			startResHistory();
 		}
 		else if(command.equals("5")) {
-			startManager();
+			//startManager();
+			test();
 		}
 		else if(command.equals("q")) {
 			quit();
@@ -136,5 +138,17 @@ public class HotelRes {
 	
 	private static void quit() {
 		System.out.println("Quitting");
+	}
+	
+	private static void test() {
+		try {
+			ResultSet rs = conn.createStatement().executeQuery("select * from Rooms;");
+			while(rs.next()) {
+				System.out.println(rs.getString("RoomCode"));
+			}
+		}
+		catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 }
