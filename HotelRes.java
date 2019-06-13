@@ -1,12 +1,14 @@
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Scanner;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+
 
 
 public class HotelRes {
@@ -51,8 +53,9 @@ public class HotelRes {
 				+ "1: Book a room\n"
 				+ "2: Cancel reservation\n"
 				+ "3: Change reservation\n"
-				+ "4: Reservation history\n"
-				+ "5: Manager sign-in\n\n"
+				+ "4: Display room information\n"
+				+ "5: Reservation history\n"
+				+ "6: Manager sign-in\n\n"
 				+ "q: quit");
 	}
 	
@@ -67,11 +70,13 @@ public class HotelRes {
 			startChangeRes();
 		}
 		else if(command.equals("4")) {
-			startResHistory();
+			startDisplay();
 		}
 		else if(command.equals("5")) {
+			startResHistory();
+		}
+		else if(command.equals("6")) {
 			startManager();
-			test();
 		}
 		else if(command.equals("q")) {
 			System.out.println("Quitting");
@@ -250,30 +255,106 @@ public class HotelRes {
 		return true;
 	}
 	
-	/* The system shall display availability on each day....
-	private static void nextAvailable(Date startDate, Date endDate, String room) {
-		PreparedStatement getAvail = null;
-		ResultSet available = null;
+	private static void startDisplay() {
+		boolean dateless = true;
+		int numRooms = 0;
+		double popScore = 0;
+		Date date = null;
+		Date eDate = null;
+		ArrayList<String> codes = new ArrayList<String>();
 		
 		try {
-			getAvail = conn.prepareStatement("select Room from Reservations where Checkout > ? and CheckIn < ? and Room = "+room);
-			getAvail.setDate(1, startDate);
-			getAvail.setDate(2, endDate);
-			available = getAvail.executeQuery();
-			if(available.isBeforeFirst()) {
-				
+			PreparedStatement getNumRooms = conn.prepareStatement("select count(RoomCode) as numRooms from Rooms");
+			ResultSet roomCount = getNumRooms.executeQuery();
+			while(roomCount.next())
+				numRooms = roomCount.getInt("numRooms");
+			getNumRooms = conn.prepareStatement("select RoomCode from Rooms");
+			roomCount = getNumRooms.executeQuery();
+			while(roomCount.next())
+				codes.add(roomCount.getString("RoomCode"));
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		while(dateless) {
+			System.out.print("Please enter a check in date (YYYY-[M]M-[D]D): ");
+			try {
+				date=java.sql.Date.valueOf(sc.nextLine());
+				dateless = false;
+			} catch(IllegalArgumentException e) {
+				System.out.println("Incorrect date format");
+				dateless = true;
+			}
+		}
+		Calendar c = Calendar.getInstance();
+		c.setTime(date);
+		c.add(Calendar.DATE, -180);
+		eDate = new java.sql.Date(c.getTimeInMillis());
+		
+		try {
+			PreparedStatement getAtt = conn.prepareStatement("select Beds, bedType, maxOcc, basePrice from Rooms where RoomCode = ?");
+			PreparedStatement getPop = conn.prepareStatement("SELECT SUM(diff) as p FROM (SELECT DATEDIFF(CheckOut, CheckIn) as diff FROM Reservations "
+					+ "WHERE Room = ? AND CheckOut < ? AND CheckOut > ?) as differ");
+			PreparedStatement getAvai = conn.prepareStatement("select CheckIn, CheckOut from Reservations where CheckIn < ? and CheckOut > ? and"
+					+ " room = ?");
+			ResultSet att = null;
+			ResultSet pop = null;
+			ResultSet avai = null;
+			for(int i=0; i<numRooms; i++) {
+				getAtt.setString(1, codes.get(i));
+				getPop.setString(1, codes.get(i));
+				getPop.setDate(2, date);
+				getPop.setDate(3, eDate);
+				getAvai.setDate(1, date);
+				getAvai.setDate(2, date);
+				getAvai.setString(3, codes.get(i));
+				att = getAtt.executeQuery();
+				pop = getPop.executeQuery();
+				avai = getAvai.executeQuery();
+				while(att.next())
+					System.out.print("Beds: "+att.getInt("Beds")+", Bed Type: "+att.getString("bedType")+", Max Occupants: "+att.getInt("maxOcc")+", Price: "
+							+att.getFloat("basePrice"));
+				while(pop.next())
+					popScore = ((double)pop.getInt("p"))/180;
+				popScore = Math.round(popScore*100.0)/100.0;
+				System.out.print(" Popularity Score: "+popScore);
+				if(avai.next())
+					System.out.println(" Next Available Date: "+rollDown(codes.get(i), date).toString());
+				else
+					System.out.println(" Available");
 			}
 		} catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
-	}*/
+	}
+	
+	private static Date rollDown(String room, Date source) {
+		Date tomorrow;
+		Calendar c = Calendar.getInstance();
+		c.setTime(source);
+		c.add(Calendar.DATE, 1);
+		tomorrow = new java.sql.Date(c.getTimeInMillis());
+		
+		try {
+			PreparedStatement isClear = conn.prepareStatement("select CheckIn, CheckOut from Reservations where room = ? and CheckIn = ?");
+			isClear.setString(1, room);
+			isClear.setDate(2, tomorrow);
+			ResultSet clear = isClear.executeQuery();
+			if(clear.next())
+				tomorrow = rollDown(room, clear.getDate("CheckOut"));
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return tomorrow;
+	}
 	
 	private static ResultSet dateSearch() {
 		boolean dateless = false;
 		Date startDate = null;
 		Date endDate = null;
 		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r "
-				+ "left join (select room from Reservations where CheckOut >= ? and CheckIn <= ?) as b on r.RoomCode = b.Room where b.Room is null;";
+				+ "left join (select room from Reservations where CheckOut >= ? and CheckIn <= ?) as b on r.RoomCode = b.Room where b.Room is null";
 		ResultSet available = null;
 		
 		do {
