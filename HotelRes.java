@@ -1,52 +1,52 @@
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
-/*
-export CLASSPATH=$CLASSPATH:mysql-connector-java-8.0.15-bin.jar:.
-export APP_JDBC_URL=jdbc:mysql://csc365.toshikuboi.net/cmmccoy
-export APP_JDBC_USER=cmmccoy
-export APP_JDBC_PW=008506325
-*/
 
 public class HotelRes {
 	
 	static Scanner sc = new Scanner(System.in);
+	static Connection conn;
 	
     public static void main(String[] args) {
 
         try{
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
             System.out.println("MySQL JDBC Driver loaded");
         } catch (ClassNotFoundException ex) {
             System.err.println("Unable to load JDBC Driver");
             System.exit(-1);
         }
 
-        String jdbcUrl = System.getenv("jdbc:mysql://csc365.toshikuboi.net/cmmccoy");
-        String dbUsername = System.getenv("cmmccoy");
-        String dbPassword = System.getenv("008506325");
+        String jdbcUrl = "jdbc:mysql://csc365.toshikuboi.net/sec03group10";
+        String dbUsername = "cmmccoy";
+        String dbPassword = "008506325";
 
+        System.out.println(jdbcUrl);
+        
         try {
-            Connection conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
+            conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
             System.out.print("MySQL Connection created");
+            
+            String command = "";
+    		
+    		while(!command.equals("q")) {
+    			printWelcome();
+    			command = sc.nextLine();
+    			executeCommand(command);
+    		}
+    		
+    		conn.close();
         } 
         catch (SQLException e) {
             e.printStackTrace();
 
-        }
-        
-        String command = "";
-		
-		while(command != "q") {
-			printWelcome();
-			command = sc.nextLine();
-			executeCommand(command);
-		}		
+        }	
     }
     
     private static void printWelcome() {
@@ -74,6 +74,9 @@ public class HotelRes {
 		}
 		else if(command.equals("5")) {
 			startManager();
+		}
+		else if(command.equals("q")) {
+			quit();
 		}
 		else {
 			System.out.println("Invalid Selection. Please input a valid command.");
@@ -107,12 +110,50 @@ public class HotelRes {
 	}
 	
 	private static void startCancelRes() {
-		System.out.println("Starts the flow for a user to cancel their reservation");
+		System.out.println("Enter the credit card number that was used to make the reservation: ");
+		int ccNum = sc.nextInt();
+		sc.nextLine();
+		ArrayList<String> codes = new ArrayList<String>();
 		
-		/* Upon the cancellation or change of a reservation, the system shall display the
-				details of the cancelled or changed reservation on the screen.
-		 * 
-		 */
+		try { //get all reservations from that CC			
+			
+			PreparedStatement prepState = conn.prepareStatement("SELECT * FROM Reservations r JOIN Customers c ON r.FirstName = c.firstname AND r.LastName = c.lastname WHERE c.CC = ?");
+			prepState.setInt(1, ccNum);
+			ResultSet rs = prepState.executeQuery();
+			
+			while(rs.next()) {
+				System.out.println("Code: " + rs.getString("Code") + ",  Room: " + rs.getString("Room") + ",  Checkin: " + rs.getString("CheckIn") + ",  Checkout: " + rs.getString("Checkout"));
+				codes.add(rs.getString("Code"));
+			}
+			
+			System.out.println("\nEnter the code of the reservation you want to cancel: ");
+			int code = sc.nextInt();
+			sc.nextLine();
+			
+			if(codes.contains(Integer.toString(code))) { //If the given reservation was made with the given credit card
+				try {
+
+					PreparedStatement prepState2 = conn.prepareStatement("DELETE from Reservations WHERE CODE = ?");
+					prepState2.setInt(1,  code);
+					int success = prepState2.executeUpdate();
+					
+					if(success == 0)
+						System.out.println("\nUnable to cancel reservation.");
+					else
+						System.out.println("\nReservation deleted.");
+				}
+				catch(SQLException e) {
+					System.out.println(e.getMessage());
+				}
+			}
+			else {
+				System.out.println("\nUnable to cancel reservation.");
+			}
+					
+		}
+		catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	private static void startChangeRes() {
@@ -125,5 +166,9 @@ public class HotelRes {
 
 	private static void startManager() {
 		System.out.println("Allows a manager to sign in to view revenue of year");
+	}
+	
+	private static void quit() {
+		System.out.println("Quitting");
 	}
 }
