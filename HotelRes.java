@@ -90,16 +90,12 @@ public class HotelRes {
 	
 	/* The system shall allow booking until the hotel is fully booked.
 	 * The system must not allow overbooking.
-	 * Each room shall have information about its maximum number of occupants allowed.
 	 * The system shall not allow a room to be occupied by guests beyond its capacity.
 	 * The system shall allow payment by credit card. Create fake credit card accounts
 			in your database. A room shall be reserved only when payment by a credit card
 			is approved (do not book a room without payment. Also, do not charge the card
 			unless the room can be reserved. I.e. both reservation and the charge must be
 			bundled into a transaction.The same should be true for cancellation.).
-	 * The system shall allow users to search for availabilities of rooms specifying day
-			(checkout and checkin dates), the type of room (single, double, twin, etc), the
-			decor, the price range, the number of rooms, and the number of occupants.
 	 * The system shall display availability of rooms on each day. For each room,
 			display its popularity score (number of days the room has been occupied during
 			the previous 180 days divided by 180 (round to two decimal places)), price,
@@ -110,10 +106,14 @@ public class HotelRes {
 	private static void startBooking() {
 		int c = 0;
 		int rChoice = 0;
+		int people = 0;
+		long cardNumber = 0;
 		String tempString = "";
 		String sChoice = "";
+		String room = "";
 		ResultSet available = null;
 		ArrayList<String> codes = new ArrayList<String>();
+		ArrayList<Integer> caps = new ArrayList<Integer>();
 		
 		System.out.println("Starts the flow for a user to book a room");
 		System.out.println("Please select a search type\n\n"
@@ -156,6 +156,7 @@ public class HotelRes {
 				c++;
 				System.out.println(c+") Room: "+available.getString("RoomName")+", Max Occupants: "+available.getInt("maxOcc"));
 				codes.add(available.getString("RoomCode"));
+				caps.add(available.getInt("maxOcc"));
 			}
 			
 			while(rChoice == 0) {
@@ -172,40 +173,125 @@ public class HotelRes {
 				}
 			}
 			rChoice--;
+			room = codes.get(rChoice);
+			
+			System.out.println("Room: "+room);
+			if(isAvailable(room)) {
+				System.out.println("How many people in your party? ");
+				people = sc.nextInt();
+				if(people > caps.get(rChoice)) {
+					System.out.println("Unfortunately, this room cannot accommodate that many people.\n"
+							+ "We're sorry for the inconvenience");
+					return;
+				}
+				System.out.println("Please input your credit card number: ");
+				cardNumber = sc.nextLong();
+				PreparedStatement ccCheck = conn.prepareStatement("select CCNum from CreditCards CCNum = "+cardNumber);
+				ResultSet cards = ccCheck.executeQuery();
+				if(!cards.isBeforeFirst()) {
+					System.out.println("Unfortunately, there is no credit-card matching that number.");
+					return;
+				}
+				//create reservation
+			} else {
+				System.out.println("Unfortunately, this room is not available at these times.\n"
+						+ "We're sorry for the inconvenience");
+				return;
+			}
+			
 		} catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
 	}
 	
+	private static boolean isAvailable(String room) {
+		boolean dateless = true;
+		Date startDate = null;
+		Date endDate = null;
+		
+		while(dateless) {
+			System.out.print("Please enter a check in date (YYYY-[M]M-[D]D): ");
+			try {
+				startDate=java.sql.Date.valueOf(sc.nextLine());
+				dateless = false;
+			} catch(IllegalArgumentException e) {
+				System.out.println("Incorrect date format");
+				dateless = true;
+			}
+		}
+		dateless = true;
+		while(dateless) {
+			System.out.print("Pleaes enter an check out date (YYYY-[M]M-[D]D): ");
+			try {
+				endDate=java.sql.Date.valueOf(sc.nextLine());
+				dateless = false;
+			} catch(IllegalArgumentException e) {
+				System.out.println("Incorrect date format");
+				dateless = true;
+			}
+		}
+		
+		try {
+			PreparedStatement getAvail = conn.prepareStatement("select Room from Reservations where Checkout >= ? and CheckIn <= ? and Room = "+room);
+			getAvail.setDate(1, startDate);
+			getAvail.setDate(2, endDate);
+			ResultSet available = getAvail.executeQuery();
+			if(available.isBeforeFirst()) {
+				return false;
+			}
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return true;
+	}
+	
+	/* The system shall display availability on each day....
+	private static void nextAvailable(Date startDate, Date endDate, String room) {
+		PreparedStatement getAvail = null;
+		ResultSet available = null;
+		
+		try {
+			getAvail = conn.prepareStatement("select Room from Reservations where Checkout > ? and CheckIn < ? and Room = "+room);
+			getAvail.setDate(1, startDate);
+			getAvail.setDate(2, endDate);
+			available = getAvail.executeQuery();
+			if(available.isBeforeFirst()) {
+				
+			}
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+	}*/
+	
 	private static ResultSet dateSearch() {
-		boolean sDateless = false;
-		boolean eDateless = false;
+		boolean dateless = false;
 		Date startDate = null;
 		Date endDate = null;
 		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r "
-				+ "left join (select room from Reservations where CheckOut > ? and CheckIn < ?) as b on r.RoomCode = b.Room where b.Room is null;";
+				+ "left join (select room from Reservations where CheckOut >= ? and CheckIn <= ?) as b on r.RoomCode = b.Room where b.Room is null;";
 		ResultSet available = null;
 		
 		do {
-			System.out.print("Please enter a start date (YYYY-[M]M-[D]D): ");
+			System.out.print("Please enter a check in date (YYYY-[M]M-[D]D): ");
 			try {
 				startDate=java.sql.Date.valueOf(sc.nextLine());
-				sDateless = false;
+				dateless = false;
 			} catch(IllegalArgumentException e) {
 				System.out.println("Incorrect date format");
-				sDateless = true;
+				dateless = true;
 			}
-		} while(sDateless);
+		} while(dateless);
 		do {
-			System.out.print("Pleaes enter an end date (YYYY-[M]M-[D]D): ");
+			System.out.print("Pleaes enter an check out date (YYYY-[M]M-[D]D): ");
 			try {
 				endDate=java.sql.Date.valueOf(sc.nextLine());
-				eDateless = false;
+				dateless = false;
 			} catch(IllegalArgumentException e) {
 				System.out.println("Incorrect date format");
-				eDateless = true;
+				dateless = true;
 			}
-		} while(eDateless);
+		} while(dateless);
 		
 		try {
 			PreparedStatement getRooms = conn.prepareStatement(baseQuery);
@@ -378,6 +464,10 @@ public class HotelRes {
 		
 		return available;
 	}
+	
+	/* If we need it write a helper function that takes an arraylist.size and returns a choice (use if need to make multiple choices)
+	 * private static int *codeChoiceUserErrorCorrector(int arraylist.size);
+	 */
 	
 	private static void startCancelRes() {
 		System.out.println("Enter the credit card number that was used to make the reservation: ");
