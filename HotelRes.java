@@ -76,7 +76,8 @@ public class HotelRes {
 			startManager();
 		}
 		else if(command.equals("q")) {
-			quit();
+			System.out.println("Quitting");
+			System.exit(0);
 		}
 		else {
 			System.out.println("Invalid Selection. Please input a valid command.");
