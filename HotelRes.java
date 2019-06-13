@@ -20,7 +20,7 @@ public class HotelRes {
     public static void main(String[] args) {
 
         try{
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
             System.out.println("MySQL JDBC Driver loaded");
         } catch (ClassNotFoundException ex) {
             System.err.println("Unable to load JDBC Driver");
@@ -42,7 +42,7 @@ public class HotelRes {
         
         String command = "";
 		
-		while(command != "q") {
+		while(!command.equals("q")) {
 			printWelcome();
 			command = sc.nextLine();
 			executeCommand(command);
@@ -74,6 +74,9 @@ public class HotelRes {
 		}
 		else if(command.equals("5")) {
 			startManager();
+		}
+		else if(command.equals("q")) {
+			quit();
 		}
 		else {
 			System.out.println("Invalid Selection. Please input a valid command.");
@@ -125,5 +128,9 @@ public class HotelRes {
 
 	private static void startManager() {
 		System.out.println("Allows a manager to sign in to view revenue of year");
+	}
+	
+	private static void quit() {
+		System.out.println("Quitting");
 	}
 }
