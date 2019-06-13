@@ -262,8 +262,4 @@ public class HotelRes {
 			System.out.println(e.getMessage());
 		}
 	}
-	
-	private static void quit() {
-		System.out.println("Quitting");
-	}
 }
