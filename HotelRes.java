@@ -218,6 +218,7 @@ public class HotelRes {
 					System.out.println("Unfortunately, this room is not available at these times.\n"
 							+ "We're sorry for the inconvenience");
 					return false;
+
 				}
 			} catch(SQLException e) {
 				System.out.println(e.getMessage());
@@ -243,7 +244,9 @@ public class HotelRes {
 				if(people > caps.get(rChoice)) {
 					System.out.println("Unfortunately, this room cannot accommodate that many people.\n"
 							+ "We're sorry for the inconvenience");
+
 					return false;
+
 				}
 				
 				PreparedStatement roomPrice = conn.prepareStatement("select basePrice*DATEDIFF(?, ?) total from Rooms where RoomCode = ?");
@@ -270,7 +273,9 @@ public class HotelRes {
 				}
 				
 				if(proceed.equalsIgnoreCase("n")) {
+
 					return false;
+
 				}
 				
 				System.out.println("Please input your credit card number: ");
@@ -297,7 +302,9 @@ public class HotelRes {
 					
 					if(createdCC == 0) {
 						System.out.println("There was a problem processing your credit card.");
+
 						return false;
+
 					}
 					
 					PreparedStatement createCustomer = conn.prepareStatement("INSERT INTO Customers (FirstName, LastName, CC) VALUES (?, ?, ?)");
@@ -308,7 +315,9 @@ public class HotelRes {
 					
 					if(createdCustomer == 0) {
 						System.out.println("There was a problem processing your credit card.");
+
 						return false;
+
 					}
 					
 					PreparedStatement createRes = conn.prepareStatement("INSERT INTO Reservations (Room, CheckIn, CheckOut, Rate, LastName, FirstName, Adults, Kids) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -351,7 +360,9 @@ public class HotelRes {
 					
 					if(updatedCC == 0) {
 						System.out.println("There was a problem processing your credit card.");
+
 						return false;
+
 					}
 					
 					PreparedStatement createRes = conn.prepareStatement("INSERT INTO Reservations (Room, CheckIn, CheckOut, Rate, LastName, FirstName, Adults, Kids) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -367,6 +378,7 @@ public class HotelRes {
 					
 					if(createdRes == 0) {
 						System.out.println("There was a problem creating your reservation.");
+
 						return false;
 					}
 					else {
@@ -380,7 +392,9 @@ public class HotelRes {
 		} catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
+
 		return false;
+
 	}
 	
 	private static boolean isAvailable(String room) {
@@ -495,6 +509,7 @@ public class HotelRes {
 				+ "2: Queen\n"
 				+ "3: Double");
 		tChoice = sc.nextLine();
+
 		
 		try {
 			if(tChoice.equals("1")) {
@@ -614,7 +629,7 @@ public class HotelRes {
 		
 		return available;
 	}
-	
+  
 	private static ResultSet maxSearch() {
 		String mChoice = "";
 		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r ";
@@ -734,7 +749,9 @@ public class HotelRes {
 	}
 
 	private static void startResHistory() {
+
 		System.out.println("Starts the flow for a user to view their reservation history");
+
 		System.out.println("What is your last name?");
 		String lname = sc.nextLine().toUpperCase();
 		System.out.println("What is your first name?");
