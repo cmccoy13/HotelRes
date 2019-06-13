@@ -18,7 +18,6 @@ public class HotelRes {
 
         try{
             Class.forName("com.mysql.cj.jdbc.Driver");
-            System.out.println("MySQL JDBC Driver loaded");
         } catch (ClassNotFoundException ex) {
             System.err.println("Unable to load JDBC Driver");
             System.exit(-1);
@@ -27,12 +26,9 @@ public class HotelRes {
         String jdbcUrl = "jdbc:mysql://csc365.toshikuboi.net/sec03group10";
         String dbUsername = "cmmccoy";
         String dbPassword = "008506325";
-
-        System.out.println(jdbcUrl);
         
         try {
             conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
-            System.out.print("MySQL Connection created");
             
             String command = "";
     		
@@ -79,6 +75,14 @@ public class HotelRes {
 		}
 		else if(command.equals("q")) {
 			System.out.println("Quitting");
+			System.out.println("\n");
+			try {
+				conn.close();
+			}
+			catch (SQLException e) {
+		            e.printStackTrace();
+
+		    }	
 			System.exit(0);
 		}
 		else {
@@ -615,18 +619,6 @@ public class HotelRes {
 			}
 			else {
 				System.out.println("\nInvalid manager ID");
-			}
-		}
-		catch(SQLException e) {
-			System.out.println(e.getMessage());
-		}
-	}
-	
-	private static void test() {
-		try {
-			ResultSet rs = conn.createStatement().executeQuery("select * from Rooms;");
-			while(rs.next()) {
-				System.out.println(rs.getString("RoomCode"));
 			}
 		}
 		catch(SQLException e) {
