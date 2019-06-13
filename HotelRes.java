@@ -71,7 +71,6 @@ public class HotelRes {
 		}
 		else if(command.equals("5")) {
 			startManager();
-			test();
 		}
 		else if(command.equals("q")) {
 			System.out.println("Quitting");
@@ -112,6 +111,7 @@ public class HotelRes {
 		int rChoice = 0;
 		int people = 0;
 		long cardNumber = 0;
+		float price = 0;
 		String tempString = "";
 		String sChoice = "";
 		String room = "";
@@ -180,28 +180,201 @@ public class HotelRes {
 			room = codes.get(rChoice);
 			
 			System.out.println("Room: "+room);
-			if(isAvailable(room)) {
-				System.out.println("How many people in your party? ");
-				people = sc.nextInt();
+			//if(isAvailable(room)) {
+			
+			boolean dateless = true;
+			Date startDate = null;
+			Date endDate = null;
+			
+			while(dateless) {
+				System.out.print("Please enter a check in date (YYYY-[M]M-[D]D): ");
+				try {
+					startDate=java.sql.Date.valueOf(sc.nextLine());
+					dateless = false;
+				} catch(IllegalArgumentException e) {
+					System.out.println("Incorrect date format");
+					dateless = true;
+				}
+			}
+			dateless = true;
+			while(dateless) {
+				System.out.print("Please enter an check out date (YYYY-[M]M-[D]D): ");
+				try {
+					endDate=java.sql.Date.valueOf(sc.nextLine());
+					dateless = false;
+				} catch(IllegalArgumentException e) {
+					System.out.println("Incorrect date format");
+					dateless = true;
+				}
+			}
+			
+			try {
+				PreparedStatement getAvail = conn.prepareStatement("select Room from Reservations where Checkout >= ? and CheckIn <= ? and Room = "+room);
+				getAvail.setDate(1, startDate);
+				getAvail.setDate(2, endDate);
+				ResultSet availableRoom = getAvail.executeQuery();
+				if(availableRoom.isBeforeFirst()) {
+					System.out.println("Unfortunately, this room is not available at these times.\n"
+							+ "We're sorry for the inconvenience");
+					return;
+				}
+			} catch(SQLException e) {
+				System.out.println(e.getMessage());
+			}
+			
+			
+				int adults = -1;
+				while(adults < 1) {
+					System.out.println("How many adults in your party? ");
+					adults = sc.nextInt();
+					sc.nextLine();
+				}
+				
+				int kids = -1;
+				while(kids < 0) {
+					System.out.println("How many kids in your party? ");
+					kids = sc.nextInt();
+					sc.nextLine();
+				}
+				
+				people = adults + kids;
+				
 				if(people > caps.get(rChoice)) {
 					System.out.println("Unfortunately, this room cannot accommodate that many people.\n"
 							+ "We're sorry for the inconvenience");
 					return;
 				}
-				System.out.println("Please input your credit card number: ");
-				cardNumber = sc.nextLong();
-				PreparedStatement ccCheck = conn.prepareStatement("select CCNum from CreditCards CCNum = "+cardNumber);
-				ResultSet cards = ccCheck.executeQuery();
-				if(!cards.isBeforeFirst()) {
-					System.out.println("Unfortunately, there is no credit-card matching that number.");
+				
+				PreparedStatement roomPrice = conn.prepareStatement("select basePrice*DATEDIFF(?, ?) total from Rooms where RoomCode = ?");
+				roomPrice.setDate(1,  endDate);
+				roomPrice.setDate(2,  startDate);
+				roomPrice.setString(3,  room);
+				ResultSet priceQ = roomPrice.executeQuery();
+				priceQ.next();
+				price = priceQ.getFloat("total");
+				
+				System.out.println("\nReservation Information...");
+				System.out.println("Reservation Dates: " + startDate + " to " + endDate);
+				System.out.println("Room: " + room);
+				System.out.println("Number of adults: " + adults);
+				System.out.println("Number of kids: " + adults);
+				System.out.println("Price: " + price);
+				
+				System.out.println("Proceed to payment (Y/N)?");
+				String proceed = sc.nextLine();
+				
+				while(!(proceed.equalsIgnoreCase("y") || proceed.equalsIgnoreCase("n"))) {
+					System.out.println("Please enter a valid selection");
+					proceed = sc.nextLine();
+				}
+				
+				if(proceed.equalsIgnoreCase("n")) {
 					return;
 				}
-				//create reservation
-			} else {
-				System.out.println("Unfortunately, this room is not available at these times.\n"
-						+ "We're sorry for the inconvenience");
-				return;
-			}
+				
+				System.out.println("Please input your credit card number: ");
+				cardNumber = sc.nextLong();
+				sc.nextLine();
+				PreparedStatement ccCheck = conn.prepareStatement("select CCNum from CreditCards WHERE CCNum = "+cardNumber);
+				ResultSet cards = ccCheck.executeQuery();
+				
+				if(!cards.isBeforeFirst()) {
+					//System.out.println("Unfortunately, there is no credit-card matching that number.");
+					
+					System.out.println("Please enter your first name: ");
+					String firstName = sc.nextLine();
+					System.out.println("Please enter your last name: ");
+					String lastName = sc.nextLine();
+					
+					PreparedStatement createCC = conn.prepareStatement("INSERT INTO CreditCards (CCNum, FirstName, LastName, Balance) VALUES (?, ?, ?, ?)");
+					createCC.setLong(1, cardNumber);
+					createCC.setString(2, firstName);
+					createCC.setString(3, lastName);
+					createCC.setFloat(4, price);
+					
+					int createdCC = createCC.executeUpdate();
+					
+					if(createdCC == 0) {
+						System.out.println("There was a problem processing your credit card.");
+						return;
+					}
+					
+					PreparedStatement createCustomer = conn.prepareStatement("INSERT INTO Customers (FirstName, LastName, CC) VALUES (?, ?, ?)");
+					createCustomer.setString(1, firstName);
+					createCustomer.setString(2, lastName);
+					createCustomer.setLong(3, cardNumber);
+					int createdCustomer = createCustomer.executeUpdate();
+					
+					if(createdCustomer == 0) {
+						System.out.println("There was a problem processing your credit card.");
+						return;
+					}
+					
+					PreparedStatement createRes = conn.prepareStatement("INSERT INTO Reservations (Room, CheckIn, CheckOut, Rate, LastName, FirstName, Adults, Kids) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+					createRes.setString(1, room);
+					createRes.setDate(2, startDate);
+					createRes.setDate(3, endDate);
+					createRes.setFloat(4, price);
+					createRes.setString(5, firstName);
+					createRes.setString(6, lastName);
+					createRes.setInt(7, adults);
+					createRes.setInt(8, kids);
+					int createdRes = createRes.executeUpdate();
+					
+					if(createdRes == 0) {
+						System.out.println("There was a problem creating your reservation.");
+					}
+					else {
+						System.out.println("Reservation confirmed! We hope you enjoy your stay.");
+					}
+					
+					return;
+				}
+				else { //valid credit card
+					
+					PreparedStatement getName = conn.prepareStatement("SELECT Firstname, lastname FROM Customers WHERE CC = ?");
+					getName.setLong(1, cardNumber);
+					ResultSet nameQ = getName.executeQuery();
+					nameQ.next();
+					
+					String fname = nameQ.getString("Firstname");
+					String lname = nameQ.getString("Lastname");
+					
+					System.out.println("Welcome back " + fname + "!");
+					
+					PreparedStatement updateCC = conn.prepareStatement("UPDATE CreditCards SET Balance = Balance + ? WHERE CCNum = ?");
+					updateCC.setFloat(1, price);
+					updateCC.setLong(2, cardNumber);
+					
+					int updatedCC = updateCC.executeUpdate();
+					
+					if(updatedCC == 0) {
+						System.out.println("There was a problem processing your credit card.");
+						return;
+					}
+					
+					PreparedStatement createRes = conn.prepareStatement("INSERT INTO Reservations (Room, CheckIn, CheckOut, Rate, LastName, FirstName, Adults, Kids) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+					createRes.setString(1, room);
+					createRes.setDate(2, startDate);
+					createRes.setDate(3, endDate);
+					createRes.setFloat(4, price);
+					createRes.setString(5, fname);
+					createRes.setString(6, lname);
+					createRes.setInt(7, adults);
+					createRes.setInt(8, kids);
+					int createdRes = createRes.executeUpdate();
+					
+					if(createdRes == 0) {
+						System.out.println("There was a problem creating your reservation.");
+					}
+					else {
+						System.out.println("Reservation confirmed! We hope you enjoy your stay.");
+					}
+					
+					return;
+					
+				}
+
 			
 		} catch(SQLException e) {
 			System.out.println(e.getMessage());
@@ -225,7 +398,7 @@ public class HotelRes {
 		}
 		dateless = true;
 		while(dateless) {
-			System.out.print("Pleaes enter an check out date (YYYY-[M]M-[D]D): ");
+			System.out.print("Please enter an check out date (YYYY-[M]M-[D]D): ");
 			try {
 				endDate=java.sql.Date.valueOf(sc.nextLine());
 				dateless = false;
