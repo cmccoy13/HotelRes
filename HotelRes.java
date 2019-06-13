@@ -36,18 +36,20 @@ public class HotelRes {
         try {
             Connection conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
             System.out.print("MySQL Connection created");
+            String command = "";
+            
+    		while(!command.equals("q")) {
+    			printWelcome();
+    			command = sc.nextLine();
+    			executeCommand(command,conn);
+    		}
+    		
+    		conn.close();
         } 
         catch (SQLException e) {
             e.printStackTrace();
         }
-        
-        String command = "";
 		
-		while(command != "q") {
-			printWelcome();
-			command = sc.nextLine();
-			executeCommand(command);
-		}		
     }
     
     
@@ -61,26 +63,34 @@ public class HotelRes {
 				+ "q: quit");
 	}
 	
-	private static void executeCommand(String command) {
+	private static void executeCommand(String command,Connection conn) {
 		if(command.equals("1")) {
 			startBooking();
 		}
 		else if(command.equals("2")) {
-			startCancelRes();
+				try {
+					startCancelRes(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		}
 		else if(command.equals("3")) {
 			startChangeRes();
 		}
 		else if(command.equals("4")) {
-			startResHistory();
+			startResHistory(conn);
 		}
 		else if(command.equals("5")) {
 			startManager();
 		}
+		else if (command.equals("q")) {
+			quit();
+		}
 		else {
 			System.out.println("Invalid Selection. Please input a valid command.");
 			command = sc.next();
-			executeCommand(command);
+			executeCommand(command,conn);
 		}
 	}
 	
@@ -108,7 +118,7 @@ public class HotelRes {
 		 */
 	}
 	
-	private static void startCancelRes() {
+	private static void startCancelRes(Connection conn) throws SQLException {
 		System.out.println("What is your reservation code?\n");
 		String code = sc.nextLine();
 		PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Reservations WHERE CODE = ?");
@@ -130,19 +140,24 @@ public class HotelRes {
 				+ "2: no\n");
 		String decision = sc.nextLine();
 		if (decision == "1") {
-			PreparedStatement stmt2 = conn.prepareStatement("DELETE FROM Reservations WHERE CODE = ?");
-			stmt2.setString(1, code);
-			int row = stmt2.executeUpdate();
-			System.out.println("Reservation cancelled.")
-			System.out.println("CODE: " + resultSet.getLong("CODE"));
-			System.out.println("ROOM: " + resultSet.getString("Room"));
-			System.out.println("CHECK-IN: " + resultSet.getString("CheckIn"));
-			System.out.println("CHECK-OUT: " + resultSet.getString("CheckOut"));
-			System.out.println("RATE: " + resultSet.getFloat("Rate"));
-			System.out.println("LastName: " + resultSet.getString("LastName"));
-			System.out.println("FirstName: " + resultSet.getString("FirstName"));
-			System.out.println("Adults: " + resultSet.getInt("Adults"));
-			System.out.println("Kids: " + resultSet.getInt("Kids"));
+			PreparedStatement stmt2;
+			try {
+				stmt2 = conn.prepareStatement("DELETE FROM Reservations WHERE CODE = ?;");
+				stmt2.setString(1, code);
+				int row = stmt2.executeUpdate();
+				System.out.println("Reservation cancelled.");
+				System.out.println("CODE: " + resultSet.getLong("CODE"));
+				System.out.println("ROOM: " + resultSet.getString("Room"));
+				System.out.println("CHECK-IN: " + resultSet.getString("CheckIn"));
+				System.out.println("CHECK-OUT: " + resultSet.getString("CheckOut"));
+				System.out.println("RATE: " + resultSet.getFloat("Rate"));
+				System.out.println("LastName: " + resultSet.getString("LastName"));
+				System.out.println("FirstName: " + resultSet.getString("FirstName"));
+				System.out.println("Adults: " + resultSet.getInt("Adults"));
+				System.out.println("Kids: " + resultSet.getInt("Kids"));
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		/* Upon the cancellation or change of a reservation, the system shall display the
@@ -155,26 +170,36 @@ public class HotelRes {
 		System.out.println("Starts the flow for a user to change their reservation");
 	}
 
-	private static void startResHistory() {
+	private static void startResHistory(Connection conn) {
 		System.out.println("Starts the flow for a user to view their reservation history");
-		System.out.println("What is your last name?\n");
-		String lname = sc.nextLine();
-		System.out.println("What is your first name?\n");
-		String fname = sc.nextLine();
-		PreparedStatement stmt = conn.prepareStatement("SELECT Customers.Room,Customers.CheckIn,Customers.Checkout FROM Customers "
-				+ "JOIN Reservations on Reservations.LastName=Customers.LastName and Reservations.FirstName=Customers.FirstName"
-				+ " WHERE Customers.FirstName = ? AND Customers.LastName = ?");
-		stmt.setString(1, fname);
-		stmt.setString(2, lname);
-		ResultSet resultSet = stmt.executeQuery();
-		while (resultSet.next()) {
-			System.out.println("ROOM: " + resultSet.getString("Room"));
-			System.out.println("CHECK-IN: " + resultSet.getString("CheckIn"));
-			System.out.println("CHECK-OUT: " + resultSet.getString("CheckOut\n"));
+		System.out.println("What is your last name?");
+		String lname = sc.nextLine().toUpperCase();
+		System.out.println("What is your first name?");
+		String fname = sc.nextLine().toUpperCase();
+		try {
+			PreparedStatement stmt = conn.prepareStatement("SELECT r.Room,r.CheckIn,r.CheckOut FROM Reservations r "
+					+ " WHERE r.FirstName = ? AND r.LastName = ?");
+			stmt.setString(1, "'" + fname + "'");
+			stmt.setString(2, "'" + lname + "'");
+			System.out.println(stmt);
+			ResultSet resultSet = stmt.executeQuery();
+			while (resultSet.next()) {
+				System.out.println("ROOM: " + resultSet.getString("Room"));
+				System.out.println("CHECK-IN: " + resultSet.getString("CheckIn"));
+				System.out.println("CHECK-OUT: " + resultSet.getString("CheckOut"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+	}
+	
+	private static void quit() {
+		System.out.println("quitting");
 	}
 
 	private static void startManager() {
 		System.out.println("Allows a manager to sign in to view revenue of year");
 	}
+	
+
 }
