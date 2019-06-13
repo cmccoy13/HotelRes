@@ -1,17 +1,12 @@
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 
-/*
-export CLASSPATH=$CLASSPATH:mysql-connector-java-8.0.15-bin.jar:.
-export APP_JDBC_URL=jdbc:mysql://csc365.toshikuboi.net/cmmccoy
-export APP_JDBC_USER=cmmccoy
-export APP_JDBC_PW=008506325
-*/
 
 public class HotelRes {
 	
@@ -78,8 +73,7 @@ public class HotelRes {
 			startResHistory();
 		}
 		else if(command.equals("5")) {
-			//startManager();
-			test();
+			startManager();
 		}
 		else if(command.equals("q")) {
 			quit();
@@ -116,12 +110,50 @@ public class HotelRes {
 	}
 	
 	private static void startCancelRes() {
-		System.out.println("Starts the flow for a user to cancel their reservation");
+		System.out.println("Enter the credit card number that was used to make the reservation: ");
+		int ccNum = sc.nextInt();
+		sc.nextLine();
+		ArrayList<String> codes = new ArrayList<String>();
 		
-		/* Upon the cancellation or change of a reservation, the system shall display the
-				details of the cancelled or changed reservation on the screen.
-		 * 
-		 */
+		try { //get all reservations from that CC			
+			
+			PreparedStatement prepState = conn.prepareStatement("SELECT * FROM Reservations r JOIN Customers c ON r.FirstName = c.firstname AND r.LastName = c.lastname WHERE c.CC = ?");
+			prepState.setInt(1, ccNum);
+			ResultSet rs = prepState.executeQuery();
+			
+			while(rs.next()) {
+				System.out.println("Code: " + rs.getString("Code") + ",  Room: " + rs.getString("Room") + ",  Checkin: " + rs.getString("CheckIn") + ",  Checkout: " + rs.getString("Checkout"));
+				codes.add(rs.getString("Code"));
+			}
+			
+			System.out.println("\nEnter the code of the reservation you want to cancel: ");
+			int code = sc.nextInt();
+			sc.nextLine();
+			
+			if(codes.contains(Integer.toString(code))) { //If the given reservation was made with the given credit card
+				try {
+
+					PreparedStatement prepState2 = conn.prepareStatement("DELETE from Reservations WHERE CODE = ?");
+					prepState2.setInt(1,  code);
+					int success = prepState2.executeUpdate();
+					
+					if(success == 0)
+						System.out.println("\nUnable to cancel reservation.");
+					else
+						System.out.println("\nReservation deleted.");
+				}
+				catch(SQLException e) {
+					System.out.println(e.getMessage());
+				}
+			}
+			else {
+				System.out.println("\nUnable to cancel reservation.");
+			}
+					
+		}
+		catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	private static void startChangeRes() {
@@ -138,17 +170,5 @@ public class HotelRes {
 	
 	private static void quit() {
 		System.out.println("Quitting");
-	}
-	
-	private static void test() {
-		try {
-			ResultSet rs = conn.createStatement().executeQuery("select * from Rooms;");
-			while(rs.next()) {
-				System.out.println(rs.getString("RoomCode"));
-			}
-		}
-		catch(SQLException e) {
-			System.out.println(e.getMessage());
-		}
 	}
 }
