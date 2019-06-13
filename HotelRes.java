@@ -27,10 +27,12 @@ public class HotelRes {
             System.exit(-1);
         }
 
-        String jdbcUrl = System.getenv("jdbc:mysql://csc365.toshikuboi.net/cmmccoy");
-        String dbUsername = System.getenv("cmmccoy");
-        String dbPassword = System.getenv("008506325");
+        String jdbcUrl = "jdbc:mysql://csc365.toshikuboi.net/cmmccoy";
+        String dbUsername = "cmmccoy";
+        String dbPassword = "008506325";
 
+        System.out.println(jdbcUrl);
+        
         try {
             Connection conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
             System.out.print("MySQL Connection created");
