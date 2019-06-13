@@ -3,6 +3,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -87,53 +88,139 @@ public class HotelRes {
 		}
 	}
 	
+	/* The system shall allow booking until the hotel is fully booked.
+	 * The system must not allow overbooking.
+	 * Each room shall have information about its maximum number of occupants allowed.
+	 * The system shall not allow a room to be occupied by guests beyond its capacity.
+	 * The system shall allow payment by credit card. Create fake credit card accounts
+			in your database. A room shall be reserved only when payment by a credit card
+			is approved (do not book a room without payment. Also, do not charge the card
+			unless the room can be reserved. I.e. both reservation and the charge must be
+			bundled into a transaction.The same should be true for cancellation.).
+	 * The system shall allow users to search for availabilities of rooms specifying day
+			(checkout and checkin dates), the type of room (single, double, twin, etc), the
+			decor, the price range, the number of rooms, and the number of occupants.
+	 * The system shall display availability of rooms on each day. For each room,
+			display its popularity score (number of days the room has been occupied during
+			the previous 180 days divided by 180 (round to two decimal places)), price,
+			available or if not, next available date, length, bed type, the number of beds, the
+			maximum number of occupancy allowed.
+	 * Upon reservation, the system shall display the details of the reservation on the screen.
+	 */
 	private static void startBooking() {
-		String startDate = "'";
-		String endDate = "'";
-		String cAvailQuery;
+		int c = 0;
+		String sChoice = "";
+		ResultSet available = null;
+		ArrayList<String> codes = new ArrayList<String>();
 		
 		System.out.println("Starts the flow for a user to book a room");
-		System.out.print("Please input a starting date\nYear (YYYY): ");
-		startDate = startDate + sc.nextInt();
-		System.out.print("Month (MM): ");
-		startDate = startDate + "-" + sc.nextInt();
-		System.out.print("Day (DD): ");
-		startDate = startDate + "-" + sc.nextInt() + "'";
-		System.out.print("Please input an ending date\nYear: ");
-		endDate = endDate + sc.nextInt();
-		System.out.print("Month: ");
-		endDate = endDate + "-" + sc.nextInt();
-		System.out.print("Day: ");
-		endDate = endDate + "-" + sc.nextInt() + "'";
+		System.out.println("Please select a search type\n\n"
+				+ "1: Search by date"
+				+ "2: Search by bed type"
+				+ "3: Search by number of beds"
+				+ "4: Search by decor"
+				+ "5: Search by price range"
+				+ "6: Search by maximum occupants");
+		sChoice = sc.nextLine();
 		
-		System.out.println("startDate: "+startDate+" endDate "+endDate);
-		cAvailQuery = "select * from Reservations2 where ";
-		cAvailQuery = cAvailQuery + startDate +" > checkout or ";
+		if(sChoice.equals("1"))
+			available = dateSearch(); //date
+		else if(sChoice.equals("2"))
+			available = typeSearch(); //bed type
+		else if(sChoice.equals("3"))
+			available = numberSeach(); //number of beds
+		else if(sChoice.equals("4"))
+			available = decorSearch(); //decor
+		else if(sChoice.equals("5"))
+			available = rangeSearch(); //price range
+		else if(sChoice.equals("6"))
+			available = maxSearch(); //number of occupants
+
+		try {
+			if(!available.isBeforeFirst()) {
+				System.out.println("There are no available rooms fitting your search parameters. We're sorry for the inconvenience.");
+				return;
+			}
+			
+			while(available.next()) {
+				c++;
+				System.out.println(c+") Room: "+available.getString("RoomName")+", Beds: "+available.getInt("Beds")+", Bed Type: "+available.getString("bedType")+
+						", Max Occupants: "+available.getInt("maxOcc")+", Base Price: "+available.getFloat("basePrice")+", Decor: "+available.getString("decor"));
+				codes.add(available.getString("RoomCode"));
+			}
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	private static ResultSet dateSearch() {
+		boolean sDateless = false;
+		boolean eDateless = false;
+		Date startDate = null;
+		Date endDate = null;
+		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r "
+				+ "left join (select room from reservations where CheckOut > ? and CheckIn < ?) as b on r.RoomCode = b.Room where booked.Room is null;";
+		ResultSet available = null;
 		
-		//ask what dates the user wants
-		//get all rooms that fit that date
-		//if no room is available thank the customer and return to welcome menu
-		//if rooms are available display them
+		do {
+			System.out.print("Please enter a start date (YYYY-[M]M-[D]D): ");
+			try {
+				startDate=java.sql.Date.valueOf(sc.nextLine());
+			} catch(IllegalArgumentException e) {
+				System.out.println("Incorrect date format");
+				sDateless = true;
+			}
+		} while(sDateless);
+		do {
+			System.out.print("Pleaes enter an end date (YYYY-[M]M-[D]D): ");
+			try {
+				endDate=java.sql.Date.valueOf(sc.nextLine());
+			} catch(IllegalArgumentException e) {
+				System.out.println("Incorrect date format");
+				eDateless = true;
+			}
+		} while(eDateless);
 		
-		/* The system shall allow booking until the hotel is fully booked.
-		 * The system must not allow overbooking.
-		 * Each room shall have information about its maximum number of occupants allowed.
-		 * The system shall not allow a room to be occupied by guests beyond its capacity.
-		 * The system shall allow payment by credit card. Create fake credit card accounts
-				in your database. A room shall be reserved only when payment by a credit card
-				is approved (do not book a room without payment. Also, do not charge the card
-				unless the room can be reserved. I.e. both reservation and the charge must be
-				bundled into a transaction.The same should be true for cancellation.).
-		 * The system shall allow users to search for availabilities of rooms specifying day
-				(checkout and checkin dates), the type of room (single, double, twin, etc), the
-				decor, the price range, the number of rooms, and the number of occupants.
-		 * The system shall display availability of rooms on each day. For each room,
-				display its popularity score (number of days the room has been occupied during
-				the previous 180 days divided by 180 (round to two decimal places)), price,
-				available or if not, next available date, length, bed type, the number of beds, the
-				maximum number of occupancy allowed.
-		 * Upon reservation, the system shall display the details of the reservation on the screen.
-		 */
+		try {
+			PreparedStatement getRooms = conn.prepareStatement(baseQuery);
+			getRooms.setDate(1, startDate);
+			getRooms.setDate(2, endDate);
+			available = getRooms.executeQuery();
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		return available;
+	}
+	
+	private static ResultSet typeSearch() {
+		ResultSet available = null;
+		
+		return available;
+	}
+	
+	private static ResultSet numberSeach() {
+		ResultSet available = null;
+		
+		return available;
+	}
+	
+	private static ResultSet rangeSearch() {
+		ResultSet available = null;
+		
+		return available;
+	}
+	
+	private static ResultSet decorSearch() {
+		ResultSet available = null;
+		
+		return available;
+	}
+	
+	private static ResultSet maxSearch() {
+		ResultSet available = null;
+		
+		return available;
 	}
 	
 	private static void startCancelRes() {
