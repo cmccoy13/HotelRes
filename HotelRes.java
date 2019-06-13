@@ -315,8 +315,8 @@ public class HotelRes {
 					createRes.setDate(2, startDate);
 					createRes.setDate(3, endDate);
 					createRes.setFloat(4, price);
-					createRes.setString(5, firstName);
-					createRes.setString(6, lastName);
+					createRes.setString(5, lastName);
+					createRes.setString(6, firstName);
 					createRes.setInt(7, adults);
 					createRes.setInt(8, kids);
 					int createdRes = createRes.executeUpdate();
@@ -358,8 +358,8 @@ public class HotelRes {
 					createRes.setDate(2, startDate);
 					createRes.setDate(3, endDate);
 					createRes.setFloat(4, price);
-					createRes.setString(5, fname);
-					createRes.setString(6, lname);
+					createRes.setString(5, lname);
+					createRes.setString(6, fname);
 					createRes.setInt(7, adults);
 					createRes.setInt(8, kids);
 					int createdRes = createRes.executeUpdate();
@@ -648,14 +648,14 @@ public class HotelRes {
 	
 	private static void startCancelRes() {
 		System.out.println("Enter the credit card number that was used to make the reservation: ");
-		int ccNum = sc.nextInt();
+		long ccNum = sc.nextLong();
 		sc.nextLine();
 		ArrayList<String> codes = new ArrayList<String>();
 		
 		try { //get all reservations from that CC			
 			
 			PreparedStatement prepState = conn.prepareStatement("SELECT * FROM Reservations r JOIN Customers c ON r.FirstName = c.firstname AND r.LastName = c.lastname WHERE c.CC = ?");
-			prepState.setInt(1, ccNum);
+			prepState.setLong(1, ccNum);
 			ResultSet rs = prepState.executeQuery();
 			
 			while(rs.next()) {
