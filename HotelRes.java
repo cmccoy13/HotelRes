@@ -115,12 +115,12 @@ public class HotelRes {
 		
 		System.out.println("Starts the flow for a user to book a room");
 		System.out.println("Please select a search type\n\n"
-				+ "1: Search by date"
-				+ "2: Search by bed type"
-				+ "3: Search by number of beds"
-				+ "4: Search by decor"
-				+ "5: Search by price range"
-				+ "6: Search by maximum occupants");
+				+ "1: Search by date\n"
+				+ "2: Search by bed type\n"
+				+ "3: Search by number of beds\n"
+				+ "4: Search by decor\n"
+				+ "5: Search by price range\n"
+				+ "6: Search by maximum occupants\n");
 		sChoice = sc.nextLine();
 		
 		if(sChoice.equals("1"))
@@ -135,7 +135,15 @@ public class HotelRes {
 			available = rangeSearch(); //price range
 		else if(sChoice.equals("6"))
 			available = maxSearch(); //number of occupants
+		else {
+			System.out.println("Incorret input, try again.");
+			return;
+		}
 
+		/*if(available = null) {
+			return;
+		}*/
+		
 		try {
 			if(!available.isBeforeFirst()) {
 				System.out.println("There are no available rooms fitting your search parameters. We're sorry for the inconvenience.");
@@ -159,13 +167,14 @@ public class HotelRes {
 		Date startDate = null;
 		Date endDate = null;
 		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r "
-				+ "left join (select room from reservations where CheckOut > ? and CheckIn < ?) as b on r.RoomCode = b.Room where booked.Room is null;";
+				+ "left join (select room from Reservations where CheckOut > ? and CheckIn < ?) as b on r.RoomCode = b.Room where b.Room is null;";
 		ResultSet available = null;
 		
 		do {
 			System.out.print("Please enter a start date (YYYY-[M]M-[D]D): ");
 			try {
 				startDate=java.sql.Date.valueOf(sc.nextLine());
+				sDateless = false;
 			} catch(IllegalArgumentException e) {
 				System.out.println("Incorrect date format");
 				sDateless = true;
@@ -175,6 +184,7 @@ public class HotelRes {
 			System.out.print("Pleaes enter an end date (YYYY-[M]M-[D]D): ");
 			try {
 				endDate=java.sql.Date.valueOf(sc.nextLine());
+				eDateless = false;
 			} catch(IllegalArgumentException e) {
 				System.out.println("Incorrect date format");
 				eDateless = true;
@@ -194,7 +204,33 @@ public class HotelRes {
 	}
 	
 	private static ResultSet typeSearch() {
+		String tChoice = "";
+		String baseQuery = "select RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor from Rooms as r ";
 		ResultSet available = null;
+		
+		System.out.println("Please select the type of bed you prefer: \n\n"
+				+ "1: King\n"
+				+ "2: Queen\n"
+				+ "3: Double\n");
+		tChoice = sc.nextLine();
+		
+		if(tChoice.equals("1")) {
+			baseQuery = baseQuery + "where bedType = \"'King'\"";
+		} else if(tChoice.equals("2")) {
+			baseQuery = baseQuery + "where bedType = \"'Queen'\"";
+		} else if(tChoice.equals("3")) {
+			baseQuery = baseQuery + "where bedType = \"'Double'\"";
+		} else {
+			System.out.println("Incorrect input, try again.");
+			return available;
+		}
+		
+		try {
+			PreparedStatement getRooms = conn.prepareStatement(baseQuery);
+			available = getRooms.executeQuery();
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 		
 		return available;
 	}
