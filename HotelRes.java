@@ -16,6 +16,7 @@ export APP_JDBC_PW=008506325
 public class HotelRes {
 	
 	static Scanner sc = new Scanner(System.in);
+	static Connection conn;
 	
     public static void main(String[] args) {
 
@@ -27,14 +28,14 @@ public class HotelRes {
             System.exit(-1);
         }
 
-        String jdbcUrl = "jdbc:mysql://csc365.toshikuboi.net/cmmccoy";
+        String jdbcUrl = "jdbc:mysql://csc365.toshikuboi.net/sec03group10";
         String dbUsername = "cmmccoy";
         String dbPassword = "008506325";
 
         System.out.println(jdbcUrl);
         
         try {
-            Connection conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
+            conn = DriverManager.getConnection(jdbcUrl, dbUsername, dbPassword);
             System.out.print("MySQL Connection created");
             
             String command = "";
@@ -78,6 +79,7 @@ public class HotelRes {
 		}
 		else if(command.equals("5")) {
 			startManager();
+			test();
 		}
 		else if(command.equals("q")) {
 			quit();
@@ -90,7 +92,32 @@ public class HotelRes {
 	}
 	
 	private static void startBooking() {
+		String startDate = "'";
+		String endDate = "'";
+		String cAvailQuery;
+		
 		System.out.println("Starts the flow for a user to book a room");
+		System.out.print("Please input a starting date\nYear (YYYY): ");
+		startDate = startDate + sc.nextInt();
+		System.out.print("Month (MM): ");
+		startDate = startDate + "-" + sc.nextInt();
+		System.out.print("Day (DD): ");
+		startDate = startDate + "-" + sc.nextInt() + "'";
+		System.out.print("Please input an ending date\nYear: ");
+		endDate = endDate + sc.nextInt();
+		System.out.print("Month: ");
+		endDate = endDate + "-" + sc.nextInt();
+		System.out.print("Day: ");
+		endDate = endDate + "-" + sc.nextInt() + "'";
+		
+		System.out.println("startDate: "+startDate+" endDate "+endDate);
+		cAvailQuery = "select * from Reservations2 where ";
+		cAvailQuery = cAvailQuery + startDate +" > checkout or ";
+		
+		//ask what dates the user wants
+		//get all rooms that fit that date
+		//if no room is available thank the customer and return to welcome menu
+		//if rooms are available display them
 		
 		/* The system shall allow booking until the hotel is fully booked.
 		 * The system must not allow overbooking.
@@ -136,5 +163,17 @@ public class HotelRes {
 	
 	private static void quit() {
 		System.out.println("Quitting");
+	}
+	
+	private static void test() {
+		try {
+			ResultSet rs = conn.createStatement().executeQuery("select * from Rooms;");
+			while(rs.next()) {
+				System.out.println(rs.getString("RoomCode"));
+			}
+		}
+		catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 }
